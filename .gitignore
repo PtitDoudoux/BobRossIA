@@ -1,0 +1,7 @@
+# IDE conf
+.idea
+.vscode
+
+# Project conf
+img_data
+logs
