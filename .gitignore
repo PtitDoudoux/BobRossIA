@@ -5,3 +5,7 @@
 # Project conf
 img_data
 logs
+
+# Python conf
+__pycache__
+*.py[cod]
