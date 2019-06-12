@@ -7,7 +7,9 @@ Define the style transfer func and initialize the models package
 """
 
 
+from datetime import timedelta
 import logging
+from time import time
 from typing import Callable, List, Tuple, Type
 
 import numpy as np
@@ -37,6 +39,7 @@ def style_transfer(pre_trained_model: Type[tf.keras.Model], content_path: str, s
     :return: The best image associated with his best loss
     """
     _logger.info(f'Content weight : {content_weight} | Style Weight : {style_weight}')
+    start = time()
     # We don't need to (or want to) train any layers of our model, so we set their
     # trainable to false.
     model = model_factory(pre_trained_model, content_layers, style_layers)
@@ -77,4 +80,6 @@ def style_transfer(pre_trained_model: Type[tf.keras.Model], content_path: str, s
             best_loss = loss
             best_img = deprocess_img(init_image.numpy())
         _logger.info(f"Iteration n°{i} | loss : {loss} | style_score : {style_score} | content_score : {content_score}")
+    computation_time = str(timedelta(seconds=time() - start))
+    _logger.info(f'Time Taken : {computation_time}')
     return best_img, best_loss

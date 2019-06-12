@@ -10,6 +10,12 @@ Also we used the code from :
 - [Neural Style Transfer: Creating Art with Deep Learning using tf.keras and eager execution](https://medium.com/tensorflow/neural-style-transfer-creating-art-with-deep-learning-using-tf-keras-and-eager-execution-7d541ac31398)
 - [Neural Style Transfer with Eager Execution](https://colab.research.google.com/github/tensorflow/models/blob/master/research/nst_blogpost/4_Neural_Style_Transfer_with_Eager_Execution.ipynb)
 
+## TODO
+
+- Modify models parameters
+- Create smaller network
+- Try process by batch
+
 
 ## How to use it
 
@@ -17,13 +23,13 @@ Also we used the code from :
 
     usage: bob_ross.py [-h] [-n NUM_ITERATIONS] [--content_weight CONTENT_WEIGHT]
                        [--style_weight STYLE_WEIGHT]
-                       {DenseNet121,VGG16,VGG19,Xception} source_image style_image
+                       {VGG16,VGG19} source_image style_image
                        target
     
     Transfer the style from an image to another
     
     positional arguments:
-      {DenseNet121,VGG16,VGG19,Xception}
+      {VGG16,VGG19}
                             The pre-trained model to use
       source_image          The pathname source image to apply the style on
       style_image           The pathname of the style image to use
@@ -40,12 +46,13 @@ Also we used the code from :
 
 ### Example
 
-    bob_ross.py my_img.jpg my_style.jpg my_transformatted_img.jpg
+    python bob_ross.py VGG16 great_sea_turtle.jpg the_great_wave_off_kanagawa.jpg great_sea_turtle_kanagawa.jpg
 
 
 ## TODO
 - Handle errors
-- Test the project
+- Tests
+- Propose an API
 
 
 ## Licence

@@ -9,3 +9,6 @@ logs
 # Python conf
 __pycache__
 *.py[cod]
+
+# Others
+cmd
