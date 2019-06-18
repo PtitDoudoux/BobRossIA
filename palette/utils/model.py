@@ -72,10 +72,8 @@ def compute_style_loss(base_style: tf.Tensor, gram_target: tf.Tensor) -> tf.Tens
 
     Mathematically, we describe the style loss of the base input image, x, and the style image, a,
     as the distance between the style representation (the gram matrices) of these images.
-
     We describe the style representation of an image as the correlation between different filter responses
     given by the Gram matrix Gl, where Glij is the inner product between the vectorized feature map i and j in layer l.
-
     We can see that Glij generated over the feature map for a given image represents the correlation
     between feature maps i and j.
 
@@ -168,7 +166,7 @@ def compute_grads(cfg: dict) -> Tuple[List[tf.Tensor], Tuple[int, int, int]]:
     """
     Compute the gradient for a given conf
     :param cfg: The configuration to use
-    :return:
+    :return: A tuple of 3 int representing the computed gradient
     """
     with tf.GradientTape() as tape:
         all_loss = compute_loss(**cfg)

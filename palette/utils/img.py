@@ -10,7 +10,6 @@ Utility file for dealing with image for the BobRossIA
 from typing import Callable, Union
 
 from keras.preprocessing.image import img_to_array
-from matplotlib import pyplot as plt
 import numpy as np
 from PIL import Image
 
@@ -67,17 +66,3 @@ def deprocess_img(processed_img: Image) -> np.ndarray:
     cp_img = cp_img[:, :, ::-1]
     cp_img = np.clip(cp_img, 0, 255).astype('uint8')
     return cp_img
-
-
-def img_show(img: Image, title: str = None) -> None:
-    """
-    Show an image process by the network
-    :param img: The image to show
-    :param title: The title of the image
-    """
-    # Remove the batch dimension and normalize for display
-    img_out = np.squeeze(img, axis=0).astype('uint8')
-    plt.imshow(img_out)
-    if title is not None:
-        plt.title(title)
-    plt.imshow(img_out)
