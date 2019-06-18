@@ -1,5 +1,5 @@
-matplotlib>=2.1
 numpy>=1.14.3
 pillow>=5.1
 tensorflow>=1.9
 tensorflow-gpu>=1.9
+keras>=2.1.5

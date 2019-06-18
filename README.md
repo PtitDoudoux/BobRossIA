@@ -6,31 +6,25 @@ Aka transfer the style from an image to another.
 
 This project is based on the paper [A Neural Algorithm of Artistic Style](https://arxiv.org/abs/1508.06576)
 
-Also we used the code from :
-- [Neural Style Transfer: Creating Art with Deep Learning using tf.keras and eager execution](https://medium.com/tensorflow/neural-style-transfer-creating-art-with-deep-learning-using-tf-keras-and-eager-execution-7d541ac31398)
-- [Neural Style Transfer with Eager Execution](https://colab.research.google.com/github/tensorflow/models/blob/master/research/nst_blogpost/4_Neural_Style_Transfer_with_Eager_Execution.ipynb)
-
-## TODO
-
-- Modify models parameters
-- Create smaller network
-- Try process by batch
+## References :
+- [Neural Style Transfer In Keras](https://markojerkic.com/style-transfer-keras/)
+- [AI_Artist](https://github.com/llSourcell/AI_Artist)
+- [Making AI Art with Style Transfer using Keras](https://medium.com/mlreview/making-ai-art-with-style-transfer-using-keras-8bb5fa44b216)
 
 
 ## How to use it
 
 ### Command line help
 
-    usage: bob_ross.py [-h] [-n NUM_ITERATIONS] [--content_weight CONTENT_WEIGHT]
-                       [--style_weight STYLE_WEIGHT]
-                       {VGG16,VGG19} source_image style_image
-                       target
-    
+    usage: bob_ross.py [-h] [-n NUM_ITERATIONS] [--content_weight {0.01,0.025}]
+                   [--style_weight {0.5,1.0,2.0}]
+                   [--total_variance_weight TOTAL_VARIANCE_WEIGHT]
+                   {VGG16,VGG19} source_image style_image target
+
     Transfer the style from an image to another
     
     positional arguments:
-      {VGG16,VGG19}
-                            The pre-trained model to use
+      {VGG16,VGG19}         The pre-trained model to use
       source_image          The pathname source image to apply the style on
       style_image           The pathname of the style image to use
       target                The pathname where to store the new image
@@ -39,14 +33,17 @@ Also we used the code from :
       -h, --help            show this help message and exit
       -n NUM_ITERATIONS, --num_iterations NUM_ITERATIONS
                             The number of iterations to apply the transfer
-      --content_weight CONTENT_WEIGHT
+      --content_weight {0.01,0.025}
                             The weight for the content loss
-      --style_weight STYLE_WEIGHT
+      --style_weight {0.5,1.0,2.0}
                             The weight for the style loss
+      --total_variance_weight TOTAL_VARIANCE_WEIGHT
+                            The weight for the total variance loss
+
 
 ### Example
 
-    python bob_ross.py VGG16 great_sea_turtle.jpg the_great_wave_off_kanagawa.jpg great_sea_turtle_kanagawa.jpg
+    python bob_ross.py VGG16 great_sea_turtle.png the_great_wave_off_kanagawa.png great_sea_turtle_kanagawa.png
 
 
 ## TODO

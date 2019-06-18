@@ -7,5 +7,5 @@ Init file of the palette.models package
 """
 
 
-from .pre_trained_models_conf import *
-from .style_transfer import style_transfer
+from .pre_trained_conf import *
+from .style_transfer import *
