@@ -9,12 +9,15 @@ Command line utility to launch the style transfer on a given pre-trained model
 
 import argparse
 import logging
+from os import mkdir, path
 import sys
 
 from PIL import Image
 import tensorflow as tf
 
 
+if not path.isdir('./logs'):
+    mkdir('logs')
 tf.enable_eager_execution()
 _logger = logging.getLogger('bob_ross_ia')
 _logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -39,6 +42,7 @@ if __name__ == '__main__':
     _logger.info(f"Transferring style with : {args['model']} = {model_conf}")
     transferred_img, _ = models.style_transfer(model_conf.model, args['source_image'], args['style_image'],
                                                model_conf.content_layers, model_conf.style_layers,
-                                               model_conf.lpi, num_iterations=args['num_iterations'])
+                                               model_conf.lpi, args['content_weight'], args['style_weight'],
+                                               args['num_iterations'])
     Image.fromarray(transferred_img).save(args['target'], 'PNG', optimize=True)
     _logger.info(f"Saving to {args['target']}")
