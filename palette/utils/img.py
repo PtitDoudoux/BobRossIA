@@ -9,7 +9,7 @@ Utility file for dealing with image for the BobRossIA
 
 from typing import Callable, Union
 
-from keras.preprocessing.image import img_to_array
+from tensorflow.keras.preprocessing.image import img_to_array
 import numpy as np
 from PIL import Image
 
@@ -46,7 +46,7 @@ def load_and_process_img(pre_process: Callable, path_to_img: str, max_dim: int)\
     return img
 
 
-def deprocess_img(processed_img: Image) -> np.ndarray:
+def deprocess_img(processed_img: np.ndarray) -> np.ndarray:
     """
     Clean a processed image into a clean and tangible one
     :param processed_img: The processed image to clean

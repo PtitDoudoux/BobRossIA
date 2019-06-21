@@ -13,18 +13,11 @@ from tensorflow.keras.models import Model
 import tensorflow as tf
 
 
-def gram_matrix(input_tensor: tf.Tensor) -> tf.Tensor:
-    """
-    Compute the gram matrix of a tensor
-    :param input_tensor: The tensor to which we should compute the gram matrix
-    :return: The Gram matrix of the input tensor as a tensor
-    """
-    # We make the image channels first
-    channels = int(input_tensor.shape[-1])
-    a = tf.reshape(input_tensor, [-1, channels])
-    n = tf.shape(a)[0]
-    gram = tf.matmul(a, a, transpose_a=True)
-    return gram / tf.cast(n, tf.float32)
+tfe = tf.contrib.eager
+
+
+__all__ = ['model_factory', 'compute_feature_representations', 'gram_matrix', 'compute_content_loss',
+           'compute_style_loss', 'compute_loss', 'compute_grads']
 
 
 def model_factory(pre_trained_model: Callable, content_layers: List[str], style_layers: List[str]) -> Model:
@@ -51,43 +44,7 @@ def model_factory(pre_trained_model: Callable, content_layers: List[str], style_
     return Model(model.input, model_outputs)
 
 
-def compute_content_loss(base_content: tf.Tensor, target: tf.Tensor) -> tf.Tensor:
-    """
-    Compute the loss for the content between two tensors
-
-    Our content loss definition is actually quite simple,
-    we simply take the euclidean distance between the two intermediate representations of those images (tensor).
-
-    :param base_content: The base content tensor (aka the source tensor from the model)
-    :param target: The tensor target to attain (aka the result gram matrix)
-    :return: The content loss as Tensor
-    """
-    return tf.reduce_mean(tf.square(base_content - target))
-
-
-def compute_style_loss(base_style: tf.Tensor, gram_target: tf.Tensor) -> tf.Tensor:
-    """
-    Compute the loss for the style between two tensors
-    Expects two images of dimension h, w, c
-
-    Mathematically, we describe the style loss of the base input image, x, and the style image, a,
-    as the distance between the style representation (the gram matrices) of these images.
-    We describe the style representation of an image as the correlation between different filter responses
-    given by the Gram matrix Gl, where Glij is the inner product between the vectorized feature map i and j in layer l.
-    We can see that Glij generated over the feature map for a given image represents the correlation
-    between feature maps i and j.
-
-    :param base_style: The base style tensor (aka the source tensor from the model)
-    :param gram_target: The gram matrix target to attain (aka the result gram matrix)
-    :return: The style loss as a tensor
-    """
-    # height, width, num filters of each layer
-    # We scale the loss at a given layer by the size of the feature map and the number of filters
-    height, width, channels = base_style.get_shape().as_list()
-    gram_style = gram_matrix(base_style)
-    return tf.reduce_mean(tf.square(gram_style - gram_target))  # / (4. * (channels ** 2) * (width * height) ** 2)
-
-
+@tfe.defun
 def compute_feature_representations(model: tf.keras.Model, img_loader_func: Callable,
                                     content_path: str, style_path: str, num_style_layers: int)\
         -> Tuple[List[tf.Tensor], List[tf.Tensor]]:
@@ -117,7 +74,62 @@ def compute_feature_representations(model: tf.keras.Model, img_loader_func: Call
     return style_features, content_features
 
 
-def compute_loss(model: Model, loss_weights: Tuple[float, float], init_image: tf.Variable,
+@tfe.defun
+def gram_matrix(input_tensor: tf.Tensor) -> tf.Tensor:
+    """
+    Compute the gram matrix of a tensor
+    :param input_tensor: The tensor to which we should compute the gram matrix
+    :return: The Gram matrix of the input tensor as a tensor
+    """
+    # We make the image channels first
+    channels = int(input_tensor.shape[-1])
+    a = tf.reshape(input_tensor, [-1, channels])
+    n = tf.shape(a)[0]
+    gram = tf.matmul(a, a, transpose_a=True)
+    return gram / tf.cast(n, tf.float32)
+
+
+@tfe.defun
+def compute_content_loss(base_content: tf.Tensor, target: tf.Tensor) -> tf.Tensor:
+    """
+    Compute the loss for the content between two tensors
+
+    Our content loss definition is actually quite simple,
+    we simply take the euclidean distance between the two intermediate representations of those images (tensor).
+
+    :param base_content: The base content tensor (aka the source tensor from the model)
+    :param target: The tensor target to attain (aka the result gram matrix)
+    :return: The content loss as Tensor
+    """
+    return tf.reduce_mean(tf.square(base_content - target))
+
+
+@tfe.defun
+def compute_style_loss(base_style: tf.Tensor, gram_target: tf.Tensor) -> tf.Tensor:
+    """
+    Compute the loss for the style between two tensors
+    Expects two images of dimension h, w, c
+
+    Mathematically, we describe the style loss of the base input image, x, and the style image, a,
+    as the distance between the style representation (the gram matrices) of these images.
+    We describe the style representation of an image as the correlation between different filter responses
+    given by the Gram matrix Gl, where Glij is the inner product between the vectorized feature map i and j in layer l.
+    We can see that Glij generated over the feature map for a given image represents the correlation
+    between feature maps i and j.
+
+    :param base_style: The base style tensor (aka the source tensor from the model)
+    :param gram_target: The gram matrix target to attain (aka the result gram matrix)
+    :return: The style loss as a tensor
+    """
+    # height, width, num filters of each layer
+    # We scale the loss at a given layer by the size of the feature map and the number of filters
+    height, width, channels = base_style.get_shape().as_list()
+    gram_style = gram_matrix(base_style)
+    return tf.reduce_mean(tf.square(gram_style - gram_target))  # / (4. * (channels ** 2) * (width * height) ** 2)
+
+
+@tfe.defun
+def compute_loss(model: Model, loss_weights: Tuple[float, float], gen_img: tf.Variable,
                  gram_style_features: List[tf.Tensor], content_features: List[tf.Tensor],
                  num_style_layers: int, num_content_layers: int)\
         -> Tuple[int, int, int]:
@@ -127,7 +139,7 @@ def compute_loss(model: Model, loss_weights: Tuple[float, float], init_image: tf
     :param model: The model that will give us access to the intermediate layers
     :param loss_weights: The weights of each contribution of each loss function.
         (style weight, content weight, and total variation weight)
-    :param init_image: Our initial base image. This image is what we are updating with
+    :param gen_img: The generated image. This image is what we are updating with
         our optimization process. We apply the gradients wrt the loss we are
         calculating to this image.
     :param gram_style_features: Precomputed gram matrices corresponding to the
@@ -141,7 +153,7 @@ def compute_loss(model: Model, loss_weights: Tuple[float, float], init_image: tf
     # Feed our init image through our model. This will give us the content and
     # style representations at our desired layers. Since we're using eager
     # our model is callable just like any other function!
-    model_outputs = model(init_image)
+    model_outputs = model(gen_img)
     style_output_features = model_outputs[:num_style_layers]
     content_output_features = model_outputs[num_style_layers:]
     style_score = 0
@@ -162,6 +174,7 @@ def compute_loss(model: Model, loss_weights: Tuple[float, float], init_image: tf
     return loss, style_score, content_score
 
 
+@tfe.defun
 def compute_grads(cfg: dict) -> Tuple[List[tf.Tensor], Tuple[int, int, int]]:
     """
     Compute the gradient for a given conf
@@ -172,4 +185,4 @@ def compute_grads(cfg: dict) -> Tuple[List[tf.Tensor], Tuple[int, int, int]]:
         all_loss = compute_loss(**cfg)
     # Compute gradients with input image
     total_loss = all_loss[0]
-    return tape.gradient(total_loss, cfg['init_image']), all_loss
+    return tape.gradient(total_loss, cfg['gen_img']), all_loss
