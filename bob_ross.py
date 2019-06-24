@@ -7,41 +7,66 @@ Command line utility to launch the style transfer on a given pre-trained model
 """
 
 
-import argparse
-import logging
-from os import mkdir, path
-import sys
+import asyncio
+from base64 import standard_b64encode
+from concurrent.futures import ThreadPoolExecutor
+from hypercorn.asyncio import serve
+from hypercorn.config import Config as HyperConfig
+from io import BytesIO
+from os import environ, mkdir, path
 
+from quart_cors import cors
 from PIL import Image
+from quart import Quart, request
 import tensorflow as tf
 
+from palette import models
 
+
+environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 if not path.isdir('./logs'):
     mkdir('logs')
 tf.enable_eager_execution()
-_logger = logging.getLogger('bob_ross_ia')
-_logger.addHandler(logging.StreamHandler(sys.stdout))
-model_choices = ('VGG16', 'VGG19')
+app = Quart(__name__)
+app = cors(app)
+hyper_config = HyperConfig()
+hyper_config.bind = ['0.0.0.0:8000']
+loop = asyncio.get_event_loop()
+th_executor = ThreadPoolExecutor(max_workers=1)
 
-bob_ross_parser = argparse.ArgumentParser(description='Transfer the style from an image to another')
-bob_ross_parser.add_argument('model', help='The pre-trained model to use', choices=model_choices)
-bob_ross_parser.add_argument('source_image', help='The pathname source image to apply the style on')
-bob_ross_parser.add_argument('style_image', help='The pathname of the style image to use')
-bob_ross_parser.add_argument('target', help='The pathname where to store the new image')
-bob_ross_parser.add_argument('-n', '--num_iterations', type=int, default=250,
-                             help='The number of iterations to apply the transfer')
-bob_ross_parser.add_argument('--content_weight', type=float, default=1e3, help='The weight for the content loss')
-bob_ross_parser.add_argument('--style_weight', type=float, default=1e-2, help='The weight for the style loss')
-bob_ross_parser.add_argument('--adam_lr', type=int, default=5, help='The learning rate of the Adam optimizer')
+
+@app.route('/', ['GET'])
+async def root():
+    """ Root route for the API """
+    return 'OK'
+
+
+@app.route('/style_transfer', ['GET', 'POST'])
+async def happy_little_accidents():
+    """
+    Route which execute the style transfer, receive the data from FormData
+    :return: The StyleTransfered image as a Quart Response
+    """
+    form = await request.form
+    files = await request.files
+    model = form.get('model', 'VGG16')
+    num_iterations = int(form.get('num_iterations', 250))
+    content_weight = form.get('content_weight', 1e3)
+    style_weight = form.get('style_weight', 1e-2)
+    adam_lr = form.get('adam_lr', 5)
+    source_image = files['source_image']
+    style_image = files['style_image']
+    model_conf = getattr(models, model)
+    # app.logger.info(f'Transferring style with : {model} = {model_conf}')
+    transfer_img_args = (th_executor, models.style_transfer, model_conf, source_image.stream,
+                         style_image.stream, adam_lr, content_weight, style_weight, num_iterations)
+    transfer_img_res = await asyncio.gather(loop.run_in_executor(*transfer_img_args))
+    bimg = BytesIO()
+    Image.fromarray(transfer_img_res[0]).save(bimg, 'PNG', optimize=True)
+    transfer_img = bimg.getvalue()
+    bimg.close()
+    return standard_b64encode(transfer_img).decode()
 
 
 if __name__ == '__main__':
-    from palette import models
-    args = vars(bob_ross_parser.parse_args())
-    model_conf = getattr(models, args['model'])
-    logging.basicConfig(filename=f"./logs/log_{args['model']}_{args['num_iterations']}.log", level=logging.INFO)
-    _logger.info(f"Transferring style with : {args['model']} = {model_conf}")
-    transfer_img = models.style_transfer(model_conf, args['source_image'], args['style_image'],
-                                         adam_lr=args['adam_lr'], num_iterations=args['num_iterations'])
-    Image.fromarray(transfer_img).save(args['target'], 'PNG', optimize=True)
-    _logger.info(f"Saving to {args['target']}")
+    loop.run_until_complete(serve(app, hyper_config))
