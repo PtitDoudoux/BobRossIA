@@ -9,6 +9,7 @@ Utility file for dealing with image for the BobRossIA
 
 from typing import Callable, Union
 
+from tensorflow import Tensor
 from tensorflow.keras.preprocessing.image import img_to_array
 import numpy as np
 from PIL import Image
@@ -32,7 +33,7 @@ def load_img(path_to_img: str, max_dim: int) -> np.ndarray:
 
 
 def load_and_process_img(pre_process: Callable, path_to_img: str, max_dim: int)\
-        -> Union['tensorflow.Tensor', np.ndarray]:
+        -> Union[Tensor, np.ndarray]:
     """
     Load and process an image for a given network
     :param pre_process: The pre-process function of Keras / TF pre trained model to use

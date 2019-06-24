@@ -28,11 +28,11 @@ bob_ross_parser.add_argument('model', help='The pre-trained model to use', choic
 bob_ross_parser.add_argument('source_image', help='The pathname source image to apply the style on')
 bob_ross_parser.add_argument('style_image', help='The pathname of the style image to use')
 bob_ross_parser.add_argument('target', help='The pathname where to store the new image')
-bob_ross_parser.add_argument('-n', '--num_iterations', type=int, default=200,
+bob_ross_parser.add_argument('-n', '--num_iterations', type=int, default=250,
                              help='The number of iterations to apply the transfer')
 bob_ross_parser.add_argument('--content_weight', type=float, default=1e3, help='The weight for the content loss')
 bob_ross_parser.add_argument('--style_weight', type=float, default=1e-2, help='The weight for the style loss')
-bob_ross_parser.add_argument('--adam_lr', type=int, default=8, help='The learning rate of the Adam optimizer')
+bob_ross_parser.add_argument('--adam_lr', type=int, default=5, help='The learning rate of the Adam optimizer')
 
 
 if __name__ == '__main__':

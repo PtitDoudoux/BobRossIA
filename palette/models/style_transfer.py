@@ -19,14 +19,45 @@ from palette.models.pre_trained_models_conf import PretrainedModelConf
 from palette.utils.img import deprocess_img
 from palette.utils.model import compute_feature_representations, compute_grads, gram_matrix,  model_factory
 
-tfe = tf.contrib.eager
+
 _logger = logging.getLogger('bob_ross_ia')
 
 
-@tfe.defun
-def _style_transfer(model: tf.keras.Model, gen_img: tf.Variable, content_path: str, style_path: str,
-                    content_layers: List[str], style_layers: List[str], lpi: Callable, opt: tf.train.AdamOptimizer,
-                    content_weight=1e3, style_weight=1e-2, num_iterations=200) -> None:
+def style_transfer(pre_trained_model: PretrainedModelConf, content_path: str, style_path: str, adam_lr=5,
+                   content_weight=1e3, style_weight=1e-2, num_iterations=250) -> np.ndarray:
+    """
+    Style transfer from a style image to a source image with a given pre-trained network
+    :param pre_trained_model: The pre-trained model to use as source
+    :param content_path: The path to the source image to paint the style
+    :param style_path: The path to the image to use the style
+    :param adam_lr: The learning rate of the Adam optimizer
+    :param content_weight: The weight for the content loss
+    :param style_weight: The weight for the style loss
+    :param num_iterations: The number of iteration to paint
+    :return: The best image associated with his best loss
+    """
+    _logger.info(f'Content weight : {content_weight} | Style Weight : {style_weight}')
+    start = time()
+    # We don't need to (or want to) train any layers of our model, so we set their
+    model = model_factory(pre_trained_model.model, pre_trained_model.content_layers, pre_trained_model.style_layers)
+    for layer in model.layers:
+        layer.trainable = False
+    # Create our optimizer
+    adam_opt = tf.train.AdamOptimizer(learning_rate=adam_lr, beta1=0.99, epsilon=1e-1)
+    # Set initial image
+    gen_img = tf.Variable(pre_trained_model.lpi(content_path), dtype=tf.float32, name='gen_img')
+    _st(model, gen_img, content_path, style_path, pre_trained_model.content_layers,
+        pre_trained_model.style_layers, pre_trained_model.lpi, adam_opt, content_weight,
+        style_weight, num_iterations)
+    transfer_img = deprocess_img(gen_img.numpy())
+    computation_time = str(timedelta(seconds=time() - start))
+    _logger.info(f'Time Taken : {computation_time}')
+    return transfer_img
+
+
+def _st(model: tf.keras.Model, gen_img: tf.Variable, content_path: str, style_path: str,
+        content_layers: List[str], style_layers: List[str], lpi: Callable, opt: tf.train.AdamOptimizer,
+        content_weight=1e3, style_weight=1e-2, num_iterations=250) -> None:
     """
     Style transfer from a style image to a source image with a given pre-trained network
     :param model: The model to use for the style transfer
@@ -60,41 +91,8 @@ def _style_transfer(model: tf.keras.Model, gen_img: tf.Variable, content_path: s
     max_vals = 255 - norm_means
     for i in range(num_iterations):
         grads, all_loss = compute_grads(cfg)
-        # loss, style_score, content_score = all_loss
+        loss, style_score, content_score = all_loss
         opt.apply_gradients([(grads, gen_img)])
         clipped = tf.clip_by_value(gen_img, min_vals, max_vals)
         gen_img.assign(clipped)
-        # _logger.info(f"Iteration n°{i} | loss : {loss} | style_score : {style_score} | content_score : {content_score}")
-    # return gen_img
-
-
-def style_transfer(pre_trained_model: PretrainedModelConf, content_path: str, style_path: str, adam_lr=8,
-                   content_weight=1e3, style_weight=1e-2, num_iterations=200) -> np.ndarray:
-    """
-    Style transfer from a style image to a source image with a given pre-trained network
-    :param pre_trained_model: The pre-trained model to use as source
-    :param content_path: The path to the source image to paint the style
-    :param style_path: The path to the image to use the style
-    :param adam_lr: The learning rate of the Adam optimizer
-    :param content_weight: The weight for the content loss
-    :param style_weight: The weight for the style loss
-    :param num_iterations: The number of iteration to paint
-    :return: The best image associated with his best loss
-    """
-    _logger.info(f'Content weight : {content_weight} | Style Weight : {style_weight}')
-    start = time()
-    # We don't need to (or want to) train any layers of our model, so we set their
-    model = model_factory(pre_trained_model.model, pre_trained_model.content_layers, pre_trained_model.style_layers)
-    for layer in model.layers:
-        layer.trainable = False
-    # Create our optimizer
-    adam_opt = tf.train.AdamOptimizer(learning_rate=adam_lr, beta1=0.99, epsilon=1e-1)
-    # Set initial image
-    gen_img = tf.Variable(pre_trained_model.lpi(content_path), dtype=tf.float32, name='gen_img')
-    _style_transfer(model, gen_img, content_path, style_path, pre_trained_model.content_layers,
-                    pre_trained_model.style_layers, pre_trained_model.lpi, adam_opt, content_weight,
-                    style_weight, num_iterations)
-    transfer_img = deprocess_img(gen_img.numpy())
-    computation_time = str(timedelta(seconds=time() - start))
-    _logger.info(f'Time Taken : {computation_time}')
-    return transfer_img
+        _logger.info(f"Iteration n°{i} | loss : {loss} | style_score : {style_score} | content_score : {content_score}")
