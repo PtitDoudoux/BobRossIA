@@ -13,9 +13,6 @@ from tensorflow.keras.models import Model
 import tensorflow as tf
 
 
-tfe = tf.contrib.eager
-
-
 __all__ = ['model_factory', 'compute_feature_representations', 'gram_matrix', 'compute_content_loss',
            'compute_style_loss', 'compute_loss', 'compute_grads']
 
@@ -44,7 +41,7 @@ def model_factory(pre_trained_model: Callable, content_layers: List[str], style_
     return Model(model.input, model_outputs)
 
 
-@tfe.defun
+@tf.function
 def compute_feature_representations(model: tf.keras.Model, img_loader_func: Callable,
                                     content_path: str, style_path: str, num_style_layers: int)\
         -> Tuple[List[tf.Tensor], List[tf.Tensor]]:
@@ -74,7 +71,7 @@ def compute_feature_representations(model: tf.keras.Model, img_loader_func: Call
     return style_features, content_features
 
 
-@tfe.defun
+@tf.function
 def gram_matrix(input_tensor: tf.Tensor) -> tf.Tensor:
     """
     Compute the gram matrix of a tensor
@@ -89,7 +86,7 @@ def gram_matrix(input_tensor: tf.Tensor) -> tf.Tensor:
     return gram / tf.cast(n, tf.float32)
 
 
-@tfe.defun
+@tf.function
 def compute_content_loss(base_content: tf.Tensor, target: tf.Tensor) -> tf.Tensor:
     """
     Compute the loss for the content between two tensors
@@ -104,7 +101,7 @@ def compute_content_loss(base_content: tf.Tensor, target: tf.Tensor) -> tf.Tenso
     return tf.reduce_mean(tf.square(base_content - target))
 
 
-@tfe.defun
+@tf.function
 def compute_style_loss(base_style: tf.Tensor, gram_target: tf.Tensor) -> tf.Tensor:
     """
     Compute the loss for the style between two tensors
@@ -128,7 +125,7 @@ def compute_style_loss(base_style: tf.Tensor, gram_target: tf.Tensor) -> tf.Tens
     return tf.reduce_mean(tf.square(gram_style - gram_target))  # / (4. * (channels ** 2) * (width * height) ** 2)
 
 
-@tfe.defun
+@tf.function
 def compute_loss(model: Model, loss_weights: Tuple[float, float], gen_img: tf.Variable,
                  gram_style_features: List[tf.Tensor], content_features: List[tf.Tensor],
                  num_style_layers: int, num_content_layers: int)\
@@ -174,7 +171,7 @@ def compute_loss(model: Model, loss_weights: Tuple[float, float], gen_img: tf.Va
     return loss, style_score, content_score
 
 
-@tfe.defun
+@tf.function
 def compute_grads(cfg: dict) -> Tuple[List[tf.Tensor], Tuple[int, int, int]]:
     """
     Compute the gradient for a given conf

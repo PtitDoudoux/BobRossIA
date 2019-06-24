@@ -13,12 +13,10 @@ from os import mkdir, path
 import sys
 
 from PIL import Image
-import tensorflow as tf
 
 
 if not path.isdir('./logs'):
     mkdir('logs')
-tf.enable_eager_execution()
 _logger = logging.getLogger('bob_ross_ia')
 _logger.addHandler(logging.StreamHandler(sys.stdout))
 model_choices = ('VGG16', 'VGG19')

@@ -15,17 +15,19 @@ from typing import Callable, List
 import numpy as np
 import tensorflow as tf
 
-from palette.models.pre_trained_models_conf import PretrainedModelConf
+
 from palette.utils.img import deprocess_img
 from palette.utils.model import compute_feature_representations, compute_grads, gram_matrix,  model_factory
+from palette.models.pre_trained_models_conf import PretrainedModelConf
 
-tfe = tf.contrib.eager
+
+TFOptimizer = tf.compat.v1.train.Optimizer
 _logger = logging.getLogger('bob_ross_ia')
 
 
-@tfe.defun
+@tf.function
 def _style_transfer(model: tf.keras.Model, gen_img: tf.Variable, content_path: str, style_path: str,
-                    content_layers: List[str], style_layers: List[str], lpi: Callable, opt: tf.train.AdamOptimizer,
+                    content_layers: List[str], style_layers: List[str], lpi: Callable, opt: TFOptimizer,
                     content_weight=1e3, style_weight=1e-2, num_iterations=200) -> None:
     """
     Style transfer from a style image to a source image with a given pre-trained network
@@ -64,7 +66,6 @@ def _style_transfer(model: tf.keras.Model, gen_img: tf.Variable, content_path: s
         opt.apply_gradients([(grads, gen_img)])
         clipped = tf.clip_by_value(gen_img, min_vals, max_vals)
         gen_img.assign(clipped)
-        # _logger.info(f"Iteration n°{i} | loss : {loss} | style_score : {style_score} | content_score : {content_score}")
     # return gen_img
 
 
@@ -88,7 +89,7 @@ def style_transfer(pre_trained_model: PretrainedModelConf, content_path: str, st
     for layer in model.layers:
         layer.trainable = False
     # Create our optimizer
-    adam_opt = tf.train.AdamOptimizer(learning_rate=adam_lr, beta1=0.99, epsilon=1e-1)
+    adam_opt = tf.compat.v1.train.AdamOptimizer(learning_rate=adam_lr, beta1=0.99, epsilon=1e-1)
     # Set initial image
     gen_img = tf.Variable(pre_trained_model.lpi(content_path), dtype=tf.float32, name='gen_img')
     _style_transfer(model, gen_img, content_path, style_path, pre_trained_model.content_layers,
