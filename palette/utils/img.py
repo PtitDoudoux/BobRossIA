@@ -10,19 +10,19 @@ Utility file for dealing with image for the BobRossIA
 from typing import Callable, Union
 
 from tensorflow import Tensor
-from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.preprocessing.image import img_to_array, load_img
 import numpy as np
 from PIL import Image
 
 
-def load_img(path_to_img: str, max_dim: int) -> np.ndarray:
+def prepare_image(path_to_img: str, max_dim: int) -> np.ndarray:
     """
     Load an image and prepare it as numpy array
     :param path_to_img: The path to the image to load
     :param max_dim: The max dimension for an image allowed
     :return: The loaded image as np array
     """
-    img = Image.open(path_to_img)
+    img = load_img(path_to_img)
     long = max(img.size)
     scale = max_dim / long
     img = img.resize((round(img.size[0] * scale), round(img.size[1] * scale)), Image.ANTIALIAS)
@@ -42,7 +42,7 @@ def load_and_process_img(pre_process: Callable, path_to_img: str, max_dim: int)\
     :return: The image optimized for the pre-trained network
              as either `tensorflow.Tensor` or `numpy.ndarray`
     """
-    img = load_img(path_to_img, max_dim)
+    img = prepare_image(path_to_img, max_dim)
     img = pre_process(img)
     return img
 

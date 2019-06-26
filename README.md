@@ -15,7 +15,8 @@ Also we used the code from :
 
 ### Command line help
 
-    usage: bob_ross.py [-h] [-n NUM_ITERATIONS] [--content_weight CONTENT_WEIGHT]
+    usage: bob_ross.py [-h] [-n NUM_ITERATIONS] [-q]
+                   [--content_weight CONTENT_WEIGHT]
                    [--style_weight STYLE_WEIGHT] [--adam_lr ADAM_LR]
                    {VGG16,VGG19} source_image style_image target
 
@@ -31,6 +32,7 @@ Also we used the code from :
       -h, --help            show this help message and exit
       -n NUM_ITERATIONS, --num_iterations NUM_ITERATIONS
                             The number of iterations to apply the transfer
+      -q, --quiet           Don't log to STDOUT
       --content_weight CONTENT_WEIGHT
                             The weight for the content loss
       --style_weight STYLE_WEIGHT
