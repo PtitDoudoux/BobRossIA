@@ -38,7 +38,7 @@ th_executor = ThreadPoolExecutor(max_workers=6)
 @app.route('/', ['GET'])
 async def root():
     """ Root route for the API """
-    return app.send_static_file('index.html')
+    return await app.send_static_file('index.html')
 
 
 @app.route('/style_transfer', ['GET', 'POST'])
