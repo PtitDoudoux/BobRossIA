@@ -13,6 +13,15 @@ Also we used the code from :
 
 ## How to use it
 
+### Caution
+
+This program need:
+  - docker
+  - nvidia-docker
+  - hvariant/waifu2x docker image
+  - GPU and working Cuda installation
+
+
 ### Command line help
 
     usage: bob_ross.py [-h] [-n NUM_ITERATIONS] [-q]
