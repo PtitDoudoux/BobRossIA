@@ -17,8 +17,8 @@ from palette.utils.img import deprocess_img
 from palette.utils.model import compute_feature_representations, compute_grads, gram_matrix,  model_factory
 
 
-def style_transfer(pre_trained_model: PretrainedModelConf, content_path: str, style_path: str, adam_lr=5,
-                   content_weight=1e3, style_weight=1e-2, num_iterations=250) -> np.ndarray:
+def style_transfer(pre_trained_model: PretrainedModelConf, content_path: str, style_path: str, adam_lr=10,
+                   content_weight=1e3, style_weight=1e-2, num_iterations=100) -> np.ndarray:
     """
     Style transfer from a style image to a source image with a given pre-trained network
     :param pre_trained_model: The pre-trained model to use as source
@@ -47,7 +47,7 @@ def style_transfer(pre_trained_model: PretrainedModelConf, content_path: str, st
 
 def _st(model: tf.keras.Model, gen_img: tf.Variable, content_path: str, style_path: str,
         content_layers: List[str], style_layers: List[str], lpi: Callable, opt: tf.train.AdamOptimizer,
-        content_weight=1e3, style_weight=1e-2, num_iterations=250) -> None:
+        content_weight=1e3, style_weight=1e-2, num_iterations=100) -> None:
     """
     Style transfer from a style image to a source image with a given pre-trained network
     :param model: The model to use for the style transfer

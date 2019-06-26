@@ -4,6 +4,7 @@
 
 # Project conf
 img_data
+palette/static
 logs
 
 # Python conf

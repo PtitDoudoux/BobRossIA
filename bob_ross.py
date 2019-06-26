@@ -10,14 +10,14 @@ Command line utility to launch the style transfer on a given pre-trained model
 import asyncio
 from base64 import standard_b64encode
 from concurrent.futures import ThreadPoolExecutor
-from hypercorn.asyncio import serve
-from hypercorn.config import Config as HyperConfig
 from io import BytesIO
 from os import environ, mkdir, path
 
+from hypercorn.asyncio import serve
+from hypercorn.config import Config as HyperConfig
+from quart import Quart, request
 from quart_cors import cors
 from PIL import Image
-from quart import Quart, request
 import tensorflow as tf
 
 from palette import models
@@ -30,15 +30,15 @@ tf.enable_eager_execution()
 app = Quart(__name__)
 app = cors(app)
 hyper_config = HyperConfig()
-hyper_config.bind = ['0.0.0.0:8000']
+hyper_config.bind = ['0.0.0.0:5555']
 loop = asyncio.get_event_loop()
-th_executor = ThreadPoolExecutor(max_workers=1)
+th_executor = ThreadPoolExecutor(max_workers=6)
 
 
 @app.route('/', ['GET'])
 async def root():
     """ Root route for the API """
-    return 'OK'
+    return app.send_static_file('index.html')
 
 
 @app.route('/style_transfer', ['GET', 'POST'])
@@ -50,10 +50,10 @@ async def happy_little_accidents():
     form = await request.form
     files = await request.files
     model = form.get('model', 'VGG16')
-    num_iterations = int(form.get('num_iterations', 250))
+    num_iterations = int(form.get('num_iterations', 100))
     content_weight = form.get('content_weight', 1e3)
     style_weight = form.get('style_weight', 1e-2)
-    adam_lr = form.get('adam_lr', 5)
+    adam_lr = form.get('adam_lr', 10)
     source_image = files['source_image']
     style_image = files['style_image']
     model_conf = getattr(models, model)
