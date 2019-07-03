@@ -2,5 +2,5 @@ docker-py>=4.0
 numba>=0.44
 numpy>=1.14.3
 pillow>=5.1
-tensorflow>=1.13
-tensorflow-gpu>=1.13
+tensorflow==1.13.1
+tensorflow-gpu==1.13.1
