@@ -61,11 +61,10 @@ async def happy_little_accidents():
     transfer_img_args = (th_executor, models.style_transfer, model_conf, source_image.stream,
                          style_image.stream, adam_lr, content_weight, style_weight, num_iterations)
     transfer_img_res = await asyncio.gather(loop.run_in_executor(*transfer_img_args))
-    bimg = BytesIO()
-    Image.fromarray(transfer_img_res[0]).save(bimg, 'PNG', optimize=True)
-    transfer_img = bimg.getvalue()
-    bimg.close()
-    return standard_b64encode(transfer_img).decode()
+    with BytesIO() as bimg:
+        Image.fromarray(transfer_img_res[0]).save(bimg, 'PNG', optimize=True)
+        b64_transfer_img = standard_b64encode(bimg.getvalue()).decode()
+    return f'data:image/png;base64,{b64_transfer_img}'
 
 
 if __name__ == '__main__':
